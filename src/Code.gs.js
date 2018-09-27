@@ -1,9 +1,34 @@
 function saveAndDeployNewVersion() {
   var projectId = "1AUxZTkOqLpP33ywkgo8T2NJlkfZ3CznkkKvWiTAiHY6KIhq7hFqbjpsM"; // your script project's Drive ID.
   var description = "my new version"; // the description of the new version to create
+  var webAppConfig = {
+    access: "ANYONE",
+    executeAs: "USER_ACCESSING"
+  };
+  updateManifest_(projectId, webAppConfig);
   var newVersionNumber = saveNewProjectVersion_(projectId, description);
   var webAppUrl = deployNewProjectVersion_(projectId, newVersionNumber);
   Logger.log(webAppUrl);
+}
+
+/**
+ * Update manifest (appscript.json) with the correct web app configuration
+ *
+ * @param  {string} projectId - The script project's Drive ID.
+ * @param  {object} webAppConfig - The web app configuration (access / executeAs)
+ */
+function updateManifest_(projectId, webAppConfig) {
+  // get current manifest
+  var output = makeRequest_(projectId, 'content');
+  var files = output.files;
+  for (var i in files) {
+    if (files[i].type == "JSON") {
+      var manifest = JSON.parse(files[i].source);
+      manifest.webapp = webAppConfig;
+      files[i].source = JSON.stringify(manifest);
+    }
+  }
+  makeRequest_(projectId, 'content', 'put', JSON.stringify({files:files}));
 }
 
 /**
